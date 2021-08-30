@@ -166,4 +166,4 @@ Resources:
             systemctl start jenkins
       Tags:
         - Key: Name
-          Value: cf_aws-and-infra-web-1a
+          Value: for_jenkins
