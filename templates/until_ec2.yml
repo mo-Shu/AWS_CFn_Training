@@ -1,0 +1,170 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources: 
+# ------------------------------------------------------------#
+#  VPC
+# ------------------------------------------------------------#
+# VPC Create
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-vpc
+
+# InternetGateway Create
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-igw
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+# ------------------------------------------------------------#
+#  Subnet
+# -----------------------------------------------------#          
+# Public Subnet1a Create
+  PublicSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.10.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public-subnet-1a
+
+# Public Subnet1c Create
+  PublicSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.11.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public-subnet-1c
+
+# Private Subnet1a Create
+  PrivateSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.20.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-private-subnet-1a
+
+# Private Subnet1c Create
+  PrivateSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.21.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-private-subnet-1c
+
+# ------------------------------------------------------------#
+#  RouteTable
+# ------------------------------------------------------------#          
+# Public RouteTable1a Create
+  PublicRouteTable1a:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public1a-route
+
+# Public RouteTable1c Create
+  PublicRouteTable1c:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public1c-route
+
+# ------------------------------------------------------------#
+# RouteTable Associate
+# 読んで字のごとし。サブネットの関連付け
+# ------------------------------------------------------------# 
+# PublicRouteTable Associate PublicSubnet1a
+  PublicSubnet1aRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1a
+      RouteTableId: !Ref PublicRouteTable1a
+
+# PublicRouteTable Associate PublicSubnet1c
+  PublicSubnet1cRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1c
+      RouteTableId: !Ref PublicRouteTable1c
+
+# ------------------------------------------------------------#
+# Routing
+# ------------------------------------------------------------# 
+# PublicRoute1a Create
+  PublicRoute1a:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1a
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+# PublicRoute1a Create
+  PublicRoute1c:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1c
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+# ------------------------------------------------------------#
+# EC2
+# ------------------------------------------------------------# 
+# SG Create
+  EC2secGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: aws-and-infra-web
+      GroupDescription: aws-and-infra-web #required!
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+# EC2 Create
+  EC2Instance1a:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: aws-and-infra-ssh-key
+      ImageId: ami-09ebacdc178ae23b7
+      InstanceType: t2.micro
+      Monitoring: false
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet1a
+          GroupSet:
+            - !Ref EC2secGroup
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-web-1a

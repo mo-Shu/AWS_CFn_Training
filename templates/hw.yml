@@ -1,0 +1,315 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources: 
+# ------------------------------------------------------------#
+#  VPC
+# ------------------------------------------------------------#
+# VPC Create
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-vpc
+
+# InternetGateway Create
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-igw
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+# ------------------------------------------------------------#
+#  Subnet
+# -----------------------------------------------------#          
+# Public Subnet1a Create
+  PublicSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.10.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public-subnet-1a
+
+# Public Subnet1c Create
+  PublicSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.11.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public-subnet-1c
+
+# Private Subnet1a Create
+  PrivateSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.20.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-private-subnet-1a
+
+# Private Subnet1c Create
+  PrivateSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.21.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-private-subnet-1c
+
+# ------------------------------------------------------------#
+#  RouteTable
+# ------------------------------------------------------------#          
+# Public RouteTable1a Create
+  PublicRouteTable1a:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public1a-route
+
+# Public RouteTable1c Create
+  PublicRouteTable1c:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public1c-route
+
+# ------------------------------------------------------------#
+# RouteTable Associate
+# 読んで字のごとし。サブネットの関連付け
+# ------------------------------------------------------------# 
+# PublicRouteTable Associate PublicSubnet1a
+  PublicSubnet1aRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1a
+      RouteTableId: !Ref PublicRouteTable1a
+
+# PublicRouteTable Associate PublicSubnet1c
+  PublicSubnet1cRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1c
+      RouteTableId: !Ref PublicRouteTable1c
+
+# ------------------------------------------------------------#
+# Routing
+# ------------------------------------------------------------# 
+# PublicRoute1a Create
+  PublicRoute1a:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1a
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+# PublicRoute1a Create
+  PublicRoute1c:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1c
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+# ------------------------------------------------------------#
+# EC2
+# ------------------------------------------------------------# 
+# SG Create
+  EC2secGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: aws-and-infra-web
+      GroupDescription: aws-and-infra-web #required!
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+# EC2 Create
+  EC2Instance1a:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: aws-and-infra-ssh-key
+      ImageId: ami-09ebacdc178ae23b7
+      InstanceType: t2.micro
+      Monitoring: false
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet1a
+          GroupSet:
+            - !Ref EC2secGroup
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-web-1a
+
+  EC2Instance1c:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: aws-and-infra-ssh-key
+      ImageId: ami-09ebacdc178ae23b7
+      InstanceType: t2.micro
+      Monitoring: false
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet1c
+          GroupSet:
+            - !Ref EC2secGroup
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-web-1c
+
+# ------------------------------------------------------------#
+#  RDS MySQL
+# ------------------------------------------------------------#
+# DBSG Create
+  RDSsecGroup:
+    Type: AWS::EC2::SecurityGroup #EC2!!
+    Properties:
+      GroupName: cf_aws-and-infra-db
+      GroupDescription: cf_aws-and-infra-db
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref EC2secGroup
+
+# DBSubnetGroup Create
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: cf_aws-and-infra-subnet-group
+      DBSubnetGroupDescription: cf_aws-and-infra-subnet-group
+      SubnetIds:
+        - !Ref PrivateSubnet1a
+        - !Ref PrivateSubnet1c
+
+# DBParameterGroup Create
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: cf_aws-and-infra-db-PG
+      Family: MySQL8.0
+
+# OptionGroup Create
+  SQLOptionGroup:
+    Type: AWS::RDS::OptionGroup
+    Properties: 
+      EngineName: mysql
+      MajorEngineVersion: 8.0
+      OptionGroupDescription: cf_aws-and-infra-db-OG
+
+# RDS Create
+  rdsDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t2.micro
+      AutoMinorVersionUpgrade: true
+      AvailabilityZone: ap-northeast-1a
+      BackupRetentionPeriod: 1 #def1
+      DBInstanceIdentifier: aws-and-infra-db
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: mysql
+      EngineVersion: 8.0.15
+      MasterUsername: root
+      MasterUserPassword: Password-rds
+      MultiAZ: false
+      OptionGroupName: !Ref SQLOptionGroup
+      Port: 3306
+      PreferredBackupWindow: 19:00-19:30
+      PreferredMaintenanceWindow: sat:20:00-sat:20:30
+      PubliclyAccessible: false
+      StorageType: gp2
+      VPCSecurityGroups:
+        - !Ref RDSsecGroup
+      DeletionProtection: false
+
+# ------------------------------------------------------------#
+#  ALB 
+# ------------------------------------------------------------#
+# ALBsecGroup Create
+  ALBsecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: aws-and-infra-alb
+      GroupDescription: aws-and-infra-alb
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+# ALBTarget Create (with ELBV2)
+  ALBTarget:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: 200
+      Name: cf-aws-and-infra-web-tg
+      Port: 80
+      Protocol: HTTP
+      Targets:
+        - Id: !Ref EC2Instance1a
+          Port: '80'
+        - Id: !Ref EC2Instance1c
+          Port: '80'
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref VPC
+
+  ALB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: cf-aws-and-infra-alb
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref ALBsecGroup
+      Subnets:
+        - !Ref PublicSubnet1a
+        - !Ref PublicSubnet1c
+
+  ALBListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref ALBTarget
+          Type: forward
+      LoadBalancerArn: !Ref ALB
+      Port: '80'
+      Protocol: HTTP
