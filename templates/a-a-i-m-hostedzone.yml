@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources: 
+  route53HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: aws-and-infra-moshu.work
+      HostedZoneConfig:
+        Comment: My hosted zone for aws-and-infra-moshu.work     
+
+Outputs:
+  route53HostedZoneNameId: 
+    Value: !Ref route53HostedZone
+    Export: 
+      Name: aaim-work-HostedZoneId
+
+# Outputs:
+#   route53HostedZoneNameServers: 
+#     Value: !GetAtt route53HostedZone.NameServers
+#     Export: 
+#       Name: aaim-work-NameServers
+
+# i dont know why this code doesnt work. 210902
