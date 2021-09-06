@@ -167,7 +167,7 @@ Resources:
             - !Ref EC2secGroup
       Tags:
         - Key: Name
-          Value: cf_aws-and-infra-web-1a
+          Value: test-target-ec2
 
 # DNSRecord
   route53RS:
@@ -178,4 +178,4 @@ Resources:
       TTL: 300
       HostedZoneId: !ImportValue aaim-work-HostedZoneId
       ResourceRecords: 
-      - !GetAtt EC2Instance1a.PublicIp
+      - !Ref EC2Instance1a
