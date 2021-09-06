@@ -178,4 +178,4 @@ Resources:
       TTL: 300
       HostedZoneId: !ImportValue aaim-work-HostedZoneId
       ResourceRecords: 
-      - !Ref EC2Instance1a
+      - !GetAtt EC2Instance1a.PublicIP
