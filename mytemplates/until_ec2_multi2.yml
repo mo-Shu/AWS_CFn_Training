@@ -1,5 +1,24 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Parameters:
+  EC2InstanceName1a:
+    Type: String
+    Default: cf_aws-and-infra-web-1a
+    AllowedValues: 
+      - Ansible
+      - Bastion
+      - target
+      - cf_aws-and-infra-web-1a
+
+  EC2InstanceName1c:
+    Type: String
+    Default: cf_aws-and-infra-web-1c
+    AllowedValues: 
+      - Ansible
+      - Bastion
+      - target
+      - cf_aws-and-infra-web-1c
+
 Resources: 
 # ------------------------------------------------------------#
 #  VPC
@@ -40,6 +59,17 @@ Resources:
         - Key: Name
           Value: cf_aws-and-infra-public-subnet-1a
 
+# Public Subnet1c Create
+  PublicSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.11.0/24
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public-subnet-1c
+
 # ------------------------------------------------------------#
 #  RouteTable
 # ------------------------------------------------------------#          
@@ -51,6 +81,15 @@ Resources:
       Tags:
         - Key: Name
           Value: cf_aws-and-infra-public1a-route
+
+# Public RouteTable1c Create
+  PublicRouteTable1c:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-public1c-route
 
 # ------------------------------------------------------------#
 # RouteTable Associate
@@ -128,4 +167,21 @@ Resources:
           sudo yum install -y tree
       Tags:
         - Key: Name
-          Value: cf_aws-and-infra-web-1a
+          Value: !Ref EC2InstanceName1a
+
+  EC2Instance1c:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: aws-and-infra-ssh-key
+      ImageId: ami-09ebacdc178ae23b7
+      InstanceType: t2.micro
+      Monitoring: false
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet1c
+          GroupSet:
+            - !Ref EC2secGroup
+      Tags:
+        - Key: Name
+          Value: !Ref EC2InstanceName1c
