@@ -164,6 +164,7 @@ Resources:
             - !Ref EC2secGroup
       UserData: 
         Fn::Base64: |
+          sudo yum -y update
           sudo yum install -y tree
       Tags:
         - Key: Name
@@ -182,6 +183,10 @@ Resources:
           SubnetId: !Ref PublicSubnet1c
           GroupSet:
             - !Ref EC2secGroup
+      UserData: 
+        Fn::Base64: |
+          sudo yum -y update
+          sudo yum install -y tree
       Tags:
         - Key: Name
           Value: !Ref EC2InstanceName1c
