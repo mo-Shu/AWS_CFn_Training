@@ -5,18 +5,16 @@ Parameters:
     Type: String
     Default: cf_aws-and-infra-web-1a
     AllowedValues: 
-      - Ansible
-      - Bastion
       - target
+      - Bastion
       - cf_aws-and-infra-web-1a
 
   EC2InstanceName1c:
     Type: String
     Default: cf_aws-and-infra-web-1c
     AllowedValues: 
-      - Ansible
       - Bastion
-      - target
+      - Ansible
       - cf_aws-and-infra-web-1c
 
 Resources: 
@@ -169,6 +167,10 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
 
 # EC2 Create
   EC2Instance1a:
@@ -186,6 +188,7 @@ Resources:
             - !Ref EC2secGroup
       UserData: 
         Fn::Base64: |
+          sudo yum -y update
           sudo yum install -y tree
       Tags:
         - Key: Name
@@ -204,6 +207,10 @@ Resources:
           SubnetId: !Ref PublicSubnet1c
           GroupSet:
             - !Ref EC2secGroup
+      UserData: 
+        Fn::Base64: |
+          sudo yum -y update
+          sudo yum install -y tree
       Tags:
         - Key: Name
           Value: !Ref EC2InstanceName1c
@@ -275,3 +282,14 @@ Resources:
       VPCSecurityGroups:
         - !Ref RDSsecGroup
       DeletionProtection: false
+
+# DNSRecord
+  route53RS:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: aws-and-infra-moshu.work
+      Type: A
+      TTL: 300
+      HostedZoneId: !ImportValue aaim-work-HostedZoneId
+      ResourceRecords: 
+      - !GetAtt EC2Instance1a.PublicIp
