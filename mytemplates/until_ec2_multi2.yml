@@ -164,6 +164,7 @@ Resources:
             - !Ref EC2secGroup
       UserData: 
         Fn::Base64: |
+          #!/bin/bash
           sudo yum -y update
           sudo yum install -y tree
       Tags:
@@ -185,6 +186,7 @@ Resources:
             - !Ref EC2secGroup
       UserData: 
         Fn::Base64: |
+          #!/bin/bash
           sudo yum -y update
           sudo yum install -y tree
       Tags:
