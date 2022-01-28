@@ -63,13 +63,6 @@ Resources:
       SubnetId: !Ref PublicSubnet1a
       RouteTableId: !Ref PublicRouteTable1a
 
-# PublicRouteTable Associate PublicSubnet1c
-  PublicSubnet1cRouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet1c
-      RouteTableId: !Ref PublicRouteTable1c
-
 # ------------------------------------------------------------#
 # Routing
 # ------------------------------------------------------------# 
@@ -78,14 +71,6 @@ Resources:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PublicRouteTable1a
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
-
-# PublicRoute1a Create
-  PublicRoute1c:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PublicRouteTable1c
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
