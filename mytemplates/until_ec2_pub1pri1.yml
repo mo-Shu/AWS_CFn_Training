@@ -80,6 +80,14 @@ Resources:
       Tags:
         - Key: Name
           Value: cf_aws-and-infra-public1a-route
+  
+  PrivateRouteTable1a:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: cf_aws-and-infra-Private1a-route
 
 # ------------------------------------------------------------#
 # RouteTable Associate
@@ -91,6 +99,12 @@ Resources:
     Properties:
       SubnetId: !Ref PublicSubnet1a
       RouteTableId: !Ref PublicRouteTable1a
+  
+  PrivateSubnet1aRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1a
+      RouteTableId: !Ref PrivateRouteTable1a
 
 # ------------------------------------------------------------#
 # Routing
@@ -188,3 +202,32 @@ Resources:
       Tags:
         - Key: Name
           Value: !Ref EC2InstanceName1c
+
+# ------------------------------------------------------------#
+# NAT Gateway
+# ------------------------------------------------------------# 
+  NAT:
+   Type: AWS::EC2::NatGateway
+   Properties:
+      AllocationId:
+         Fn::GetAtt:
+         - EIP
+         - AllocationId
+      SubnetId:
+         Ref: PublicSubnet1a
+      Tags:
+      - Key: stack
+        Value: production
+  EIP:
+     # DependsOn: VPCGatewayAttach
+     Type: AWS::EC2::EIP
+     Properties:
+        Domain: vpc
+  Route:
+     Type: AWS::EC2::Route
+     Properties:
+        RouteTableId:
+           Ref: PrivateRouteTable1a
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId:
+           Ref: NAT
